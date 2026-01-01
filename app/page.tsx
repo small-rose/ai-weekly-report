@@ -1,3 +1,5 @@
+// app/page.tsx（新增 modelState + 下拉框）
+
 'use client';
 
 import { useState } from 'react';
@@ -7,6 +9,7 @@ export default function HomePage() {
   const [report, setReport] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [model, setModel] = useState<'deepseek' | 'moonshot'>('deepseek'); // 默认 DeepSeek
 
   const handleSubmit = async () => {
     if (!input.trim()) {
@@ -21,19 +24,17 @@ export default function HomePage() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: input }),
+        body: JSON.stringify({ content: input, model }), // 👈 传 model
       });
 
       const data = await res.json();
-
       if (!res.ok) {
-        setError(data.error || '生成失败，请稍后重试');
+        setError(data.error || '生成失败');
         return;
       }
-
       setReport(data.report);
     } catch (err) {
-      setError('网络错误，请检查网络');
+      setError('网络错误');
     } finally {
       setLoading(false);
     }
@@ -43,14 +44,35 @@ export default function HomePage() {
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'system-ui' }}>
       <h1 style={{ textAlign: 'center', marginBottom: '20px' }}>🤖 AI 周报生成器</h1>
       <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
-        输入本周工作内容，AI 自动整理成专业周报
+        输入工作内容，AI 生成专业周报（支持国产模型）
       </p>
+
+      {/* 👇 新增模型选择 */}
+      <div style={{ marginBottom: '12px' }}>
+        <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px' }}>
+          选择 AI 模型：
+        </label>
+        <select
+          value={model}
+          onChange={(e) => setModel(e.target.value as any)}
+          style={{
+            width: '100%',
+            padding: '8px',
+            borderRadius: '6px',
+            border: '1px solid #ddd',
+            fontSize: '14px',
+          }}
+        >
+          <option value="deepseek">DeepSeek（永久免费）</option>
+          <option value="moonshot">Moonshot（月限100万 tokens）</option>
+        </select>
+      </div>
 
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="例如：完成了用户登录模块开发，参与了3次产品需求评审，修复了5个前端bug..."
-        rows={6}
+        placeholder="例如：完成了登录模块开发，修复了5个bug，参与需求评审..."
+        rows={5}
         style={{
           width: '100%',
           padding: '12px',
@@ -112,7 +134,7 @@ export default function HomePage() {
       )}
 
       <footer style={{ marginTop: '40px', textAlign: 'center', color: '#999', fontSize: '14px' }}>
-        ⚡ 完全免费 · 数据不存储 · 基于 AI 自动生成
+        ⚡ 支持国产大模型 · 数据不存储 · 免费使用
       </footer>
     </div>
   );
